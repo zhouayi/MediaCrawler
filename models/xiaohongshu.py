@@ -9,6 +9,7 @@ from tortoise.models import Model
 import config
 from tools import utils
 from var import request_keyword_var
+import datetime
 
 
 class XhsBaseModel(Model):
@@ -65,14 +66,16 @@ async def update_xhs_note(note_item: Dict):
     user_info = note_item.get("user", {})
     interact_info = note_item.get("interact_info", {})
     image_list: List[Dict] = note_item.get("image_list", [])
+    tag_list: List[Dict] = note_item.get("tag_list", [])
 
     local_db_item = {
         "note_id": note_item.get("note_id"),
         "type": note_item.get("type"),
         "title": note_item.get("title") or note_item.get("desc", "")[:255],
         "desc": note_item.get("desc", ""),
-        "time": note_item.get("time"),
-        "last_update_time": note_item.get("last_update_time", 0),
+        "tag_list": ','.join([tag.get('name', '') for tag in tag_list]) if len(tag_list) else ' ',
+        "time": datetime.datetime.fromtimestamp(note_item.get("time") / 1000),
+        "last_update_time": datetime.datetime.fromtimestamp(note_item.get("last_update_time", 0) / 1000),
         "user_id": user_info.get("user_id"),
         "nickname": user_info.get("nickname"),
         "avatar": user_info.get("avatar"),
@@ -82,7 +85,7 @@ async def update_xhs_note(note_item: Dict):
         "share_count": interact_info.get("share_count"),
         "ip_location": note_item.get("ip_location", ""),
         "image_list": ','.join([img.get('url', '') for img in image_list]),
-        "last_modify_ts": utils.get_current_timestamp(),
+        "last_modify_ts": datetime.datetime.fromtimestamp(utils.get_current_timestamp() / 1000),
     }
     print("xhs note:", local_db_item)
     if config.IS_SAVED_DATABASED:
@@ -113,7 +116,7 @@ async def update_xhs_note_comment(note_id: str, comment_item: Dict):
     comment_id = comment_item.get("id")
     local_db_item = {
         "comment_id": comment_id,
-        "create_time": comment_item.get("create_time"),
+        "create_time": datetime.datetime.fromtimestamp(comment_item.get("create_time") / 1000),
         "ip_location": comment_item.get("ip_location"),
         "note_id": note_id,
         "content": comment_item.get("content"),
@@ -121,7 +124,7 @@ async def update_xhs_note_comment(note_id: str, comment_item: Dict):
         "nickname": user_info.get("nickname"),
         "avatar": user_info.get("image"),
         "sub_comment_count": comment_item.get("sub_comment_count"),
-        "last_modify_ts": utils.get_current_timestamp(),
+        "last_modify_ts": datetime.datetime.fromtimestamp(utils.get_current_timestamp() / 1000),
     }
     print("xhs note comment:", local_db_item)
     if config.IS_SAVED_DATABASED:
